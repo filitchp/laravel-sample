@@ -9,12 +9,11 @@ use Illuminate\Http\Response;
 use Illuminate\Http\Request;
  
 class UploadController extends Controller {
-  
-  
+
   private static $ERROR_FILE_NOT_PROVIDED = '1';
   private static $ERROR_FILE_INVALID      = '2';
   private static $ERROR_FILE_NOT_CSS      = '3';
- 
+
 	/**
 	 * Display a listing of the resource.
 	 *
@@ -70,19 +69,6 @@ class UploadController extends Controller {
         throw new Exception('File not found.');
       }
 
-      $file_handle = fopen($file_path, "rb");
-
-      if (!$file_handle)
-      {
-        throw new Exception('File open failed.');
-      }
-
-      while (!feof($file_handle))
-      {
-        echo fgets($file_handle) . "<br>";
-      }
-
-      fclose($file_handle);
 
       // send success JSON
     }
@@ -92,9 +78,5 @@ class UploadController extends Controller {
     }
   }
   
-  
-  private static function parse_css()
-  {
-    
-  }
+ 
 }
