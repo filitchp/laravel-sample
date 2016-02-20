@@ -57,7 +57,7 @@ class ExampleTest extends TestCase
     try
     {
       $c = new CssParser('p {color: #ff0000;');
-      $c->getStats();
+      $c->parseCss();
       $this->assertTrue(false);
     }
     catch (Exception $e)
@@ -68,7 +68,7 @@ class ExampleTest extends TestCase
     try
     {
       $c = new CssParser('p color: #ff0000;}');
-      $c->getStats();
+      $c->parseCss();
       $this->assertTrue(false);
     }
     catch (Exception $e)
@@ -85,7 +85,7 @@ class ExampleTest extends TestCase
              '  }';
       
       $c = new CssParser($css);
-      $c->getStats();
+      $c->parseCss();
       $this->assertTrue(false);
     }
     catch (Exception $e)
@@ -103,7 +103,7 @@ class ExampleTest extends TestCase
              '}';
 
       $c = new CssParser($css);
-      $c->getStats();
+      $c->parseCss();
       $this->assertTrue(false);
     }
     catch (Exception $e)
