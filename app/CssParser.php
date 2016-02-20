@@ -9,7 +9,10 @@ class CssParser
   //        Constants
   //---------------------------
   private static $MAX_LINES = 10000;
-  
+  private static $FONT_PROPERTY = 'font-family';
+  private static $FONT_SIZE_PROPERTY = 'font-size';
+  private static $COLOR_PROPERTY = 'color';
+
   //---------------------------
   //       Properties
   //---------------------------
@@ -24,8 +27,6 @@ class CssParser
 
   // Stats
   protected $line_count      = 0;
-  protected $selector_count  = 0;
-  protected $rule_count      = 0;
   protected $character_count = 0;
   
   //----------------------------------------------------------------------------
@@ -64,7 +65,7 @@ class CssParser
   /**
    * Read a CSS file from disk
    * 
-   * @param string $filepath
+   * @param string $filepath  The CSS file on disk to read
    */
   public function readFile($filepath)
   {
@@ -101,8 +102,8 @@ class CssParser
   /**
    * Parse the CSS and return the information in a hierarchical structure
    * 
-   * @return array the CSS 'tree' structure
-   * @throws Exception if no CSS data was provided
+   * @return array  the CSS 'tree' structure
+   * @throws Exception  if no CSS data was provided
    */
   public function parseCss()
   {
@@ -119,6 +120,70 @@ class CssParser
     
     return $this->cssTree;
 
+  }
+  
+  /**
+   * Get stats about the CSS that was parsed
+   * 
+   * @throws Exception  if CSS data has not been parsed
+   */
+  public function getStats()
+  {
+    if (empty($this->cssTree))
+    {
+      throw new Exception('There is no parsed CSS data');
+    }
+    
+    $selector_count = 0;
+    $ruleset_count = count($this->cssTree);
+    $fonts_used = [];
+    $colors_used = [];
+
+    foreach ($this->cssTree as &$rulesets)
+    {
+      $selector_count += count($rulesets['selector']);
+
+      foreach ($rulesets['declarations'] as &$declaration)
+      {
+        $value = $declaration['value'];
+        
+        print_r($declaration['property']);
+
+        switch ($declaration['property'])
+        {
+          case static::$FONT_PROPERTY:
+
+            if (is_array($value))
+            {
+              $fonts_used = array_merge($fonts_used, $value);
+            }
+            else
+            {
+              $fonts_used = array_merge($fonts_used, [$value]);
+            }
+
+            break;
+          case static::$FONT_SIZE_PROPERTY:
+            break;
+          
+          case static::$COLOR_PROPERTY:
+            $colors_used = array_merge($colors_used, [$value]);
+            break;
+        }
+      }
+    }
+
+    return [
+      'file_stats' => ['lines'      => $this->line_count,
+                       'characters' => $this->character_count],
+      'css_stats' => [
+        'ruleset_count'  => $ruleset_count,
+        'selector_count' => $selector_count,
+        'fonts_used'     => array_unique($fonts_used),
+        'colors_used'    => array_unique($colors_used),
+      ]
+    ];
+ 
   }
   
   /**
@@ -182,7 +247,7 @@ class CssParser
   /**
    * Third phase: For each CSS ruleset parse selectors and declarations
    * 
-   * @throws Exception if the selector/declaration is not found
+   * @throws Exception  if the selector/declaration is not found
    */
   protected function _parseCssRulesets()
   {
@@ -204,13 +269,15 @@ class CssParser
       $declarationBlob = substr($cssRuleset, $selectorBlobLength);
       
       $selectorBlob = trim($selectorMatches[0]);
+      
+      // TODO: deal with media queries here...
 
       $selectors = $this->_parseCssSelectorBlob($selectorBlob);
 
-      $properties = $this->_parseCssDeclarationBlob($declarationBlob);
+      $declarations = $this->_parseCssDeclarationBlob($declarationBlob);
       
-      $this->cssTree[] = ['selector'   => $selectors,
-                          'properties' => $properties];
+      $this->cssTree[] = ['selector'     => $selectors,
+                          'declarations' => $declarations];
  
     }
     
@@ -238,24 +305,24 @@ class CssParser
   /**
    * For a given string of properties get the corresponding property/value pairs
    * 
-   * @param string $propertyBlob
+   * @param string $declarationBlob
    * @throws Exception if no properties are found
    */
-  protected function _parseCssDeclarationBlob(&$propertyBlob)
+  protected function _parseCssDeclarationBlob(&$declarationBlob)
   {
     // Get everything inside of the braces { }
-    $propertyMatches = [];
-    preg_match("/\{(.*?)\}/", $propertyBlob, $propertyMatches);
+    $declarationsMatches = [];
+    preg_match("/\{(.*?)\}/", $declarationBlob, $declarationsMatches);
 
-    if (empty($propertyMatches[1]))
+    if (empty($declarationsMatches[1]))
     {
       throw new Exception('Properties not found!');
     }
 
     // Split things by semicolon...
-    $propertySetBlobs = explode(';', $propertyMatches[1]);
+    $propertySetBlobs = explode(';', $declarationsMatches[1]);
 
-    $propertySet = [];
+    $declarations = [];
     
     foreach ($propertySetBlobs as &$propertySetBlob)
     {
@@ -266,9 +333,14 @@ class CssParser
       
       $set = explode(':', $propertySetBlob);
       
-      if (!isset($set[0]) || !isset($set[1]))
+      if (!isset($set[0]))
       {
-        throw new Exception('Invalid property/value!');
+        throw new Exception('Invalid declaration, missing property!');
+      }
+      
+      if (!isset($set[1]))
+      {
+        throw new Exception('Invalid declaration, missing value!');
       }
 
       $values_temp = explode(',', $set[1]);
@@ -293,13 +365,13 @@ class CssParser
         $value = strtolower(trim($values_temp[0]));
       }
 
-      $propertySet[] = [
+      $declarations[] = [
         'property' => strtolower(trim($set[0])),
         'value'    => $value
       ];
     }
     
-    return $propertySet;
+    return $declarations;
   }
 
 }
