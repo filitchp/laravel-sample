@@ -12,6 +12,7 @@ class CssParser
   private static $FONT_PROPERTY = 'font-family';
   private static $FONT_SIZE_PROPERTY = 'font-size';
   private static $COLOR_PROPERTY = 'color';
+  private static $BG_COLOR_PROPERTY = 'background-color';
 
   //---------------------------
   //       Properties
@@ -114,9 +115,9 @@ class CssParser
     
     $this->_preprocessCssBlob();
     
-    $this->_extractCssRulesetsFromBlob();
+    $this->_extractCssRulesetsFromBlob($this->cssBlob, $this->cssRulesets);
     
-    $this->_parseCssRulesets();
+    $this->_parseCssRulesets($this->cssRulesets);
     
     return $this->cssTree;
 
@@ -134,7 +135,8 @@ class CssParser
       throw new Exception('There is no parsed CSS data');
     }
     
-    $selector_count = 0;
+    $selector_count    = 0;
+    $media_query_count = 0;
     $ruleset_count = count($this->cssTree);
     $fonts_used = [];
     $colors_used = [];
@@ -147,7 +149,7 @@ class CssParser
       {
         $value = $declaration['value'];
         
-        print_r($declaration['property']);
+        //print_r($declaration['property']);
 
         switch ($declaration['property'])
         {
@@ -163,13 +165,21 @@ class CssParser
             }
 
             break;
+            
           case static::$FONT_SIZE_PROPERTY:
+            
             break;
           
           case static::$COLOR_PROPERTY:
+          case static::$BG_COLOR_PROPERTY:
             $colors_used = array_merge($colors_used, [$value]);
             break;
         }
+      }
+      
+      if (!empty($rulesets['media_query']))
+      {
+        $media_query_count++;
       }
     }
 
@@ -177,13 +187,13 @@ class CssParser
       'file_stats' => ['lines'      => $this->line_count,
                        'characters' => $this->character_count],
       'css_stats' => [
-        'ruleset_count'  => $ruleset_count,
-        'selector_count' => $selector_count,
-        'fonts_used'     => array_unique($fonts_used),
-        'colors_used'    => array_unique($colors_used),
+        'ruleset_count'     => $ruleset_count,
+        'selector_count'    => $selector_count,
+        'media_query_count' => $media_query_count,
+        'fonts_used'        => array_unique($fonts_used),
+        'colors_used'       => array_unique($colors_used),
       ]
     ];
- 
   }
   
   /**
@@ -196,11 +206,11 @@ class CssParser
   }
   
   /**
-   * Second phase: Extract valid CSS rulesets from the CSS blob
+   * Extract valid CSS rulesets from the CSS blob
    * 
-   * @throws Exception if the syntax is invalid
+   * @throws Exception  if the syntax is invalid
    */
-  protected function _extractCssRulesetsFromBlob()
+  protected function _extractCssRulesetsFromBlob(&$cssBlob, &$cssRuleset)
   {
     $start      = 0;
     $braceDepth = 0;
@@ -208,19 +218,19 @@ class CssParser
     
     // Compute a new string length since the blob might have been shortened during
     // preprocessing
-    $blobLength = strlen($this->cssBlob);
+    $blobLength = strlen($cssBlob);
     
     for ($i = 0; $i < $blobLength; $i++)
     {
 
       // Find a set of properties to isolate a CSS rulset block
       // Be sure to account for nested braces (commonly found with @media rules)
-      if ($this->cssBlob[$i] == '{')
+      if ($cssBlob[$i] == '{')
       {
         $braceDepth++;
         $haveBrace = true;
       }
-      else if ($this->cssBlob[$i] == '}')
+      else if ($cssBlob[$i] == '}')
       {
         $braceDepth--;
       }
@@ -230,13 +240,13 @@ class CssParser
         // We found a ruleset, now store it...
         $rulesetLength = $i - $start + 1;
 
-        $this->cssRulesets[] = trim(substr($this->cssBlob, $start, $rulesetLength));
+        $cssRuleset[] = trim(substr($cssBlob, $start, $rulesetLength));
         
         $start = $i + 1;
         $haveBrace  = false;
       }
       
-      if (($i == ($this->character_count - 1)) && ($braceDepth != 0))
+      if (($i == ($blobLength - 1)) && ($braceDepth != 0))
       {
         // Forgot to open/close a brace
         throw new Exception('Invalid CSS syntax: missing brace!');
@@ -249,9 +259,9 @@ class CssParser
    * 
    * @throws Exception  if the selector/declaration is not found
    */
-  protected function _parseCssRulesets()
+  protected function _parseCssRulesets(&$cssRulesets, $mediaQuery = '')
   {
-    foreach ($this->cssRulesets as &$cssRuleset)
+    foreach ($cssRulesets as &$cssRuleset)
     {
       $selectorMatches = [];
 
@@ -263,27 +273,56 @@ class CssParser
         throw new Exception('Selector/rule is missing!');
       }
       
-      $selectorBlobLength = strlen($selectorMatches[0]);
-      
-      // Property/value pairs are everything else
-      $declarationBlob = substr($cssRuleset, $selectorBlobLength);
-      
       $selectorBlob = trim($selectorMatches[0]);
       
-      // TODO: deal with media queries here...
+      $selectorBlobLength = strlen($selectorBlob);
 
-      $selectors = $this->_parseCssSelectorBlob($selectorBlob);
-
-      $declarations = $this->_parseCssDeclarationBlob($declarationBlob);
+      // The declaration part is everything else
+      $remainingBlob = trim(substr($cssRuleset, $selectorBlobLength));
       
-      $this->cssTree[] = ['selector'     => $selectors,
-                          'declarations' => $declarations];
- 
+      if (str_contains($selectorBlob, '@media'))
+      {
+        
+        $mediaRulesets = [];
+        $declarationsMatches = [];
+
+        $remainingBlobLength = strlen($remainingBlob);
+
+        if ($remainingBlobLength <= 2)
+        {
+          // Remaining blob is empty (either "{}" or ""), ignore it...
+          continue;
+        }
+
+        // Remove the outer braces (simpler and quicker than regex)
+        $mediaRulesetBlob = substr($remainingBlob, 1, $remainingBlobLength - 2);
+
+        //print_r($mediaRulesetBlob);
+
+        $this->_extractCssRulesetsFromBlob($mediaRulesetBlob, $mediaRulesets);
+
+        //print_r($mediaRulesets);
+        
+        $mediaQuery = trim($selectorBlob);
+        
+        // Recursive call to parse media query rulesets
+        $this->_parseCssRulesets($mediaRulesets, $mediaQuery);
+      }
+      else
+      {
+        $selectors = $this->_parseCssSelectorBlob($selectorBlob);
+
+        $declarations = $this->_parseCssDeclarationBlob($remainingBlob);
+
+        $this->cssTree[] = ['selector'     => $selectors,
+                            'declarations' => $declarations,
+                            'media_query'  => $mediaQuery];
+      }
     }
     
     //print_r($this->cssTree);
   }
-  
+
   /**
    * Given a selector string parse out the selectors/rules/queries
    * 
@@ -316,7 +355,7 @@ class CssParser
 
     if (empty($declarationsMatches[1]))
     {
-      throw new Exception('Properties not found!');
+      throw new Exception('Declaration is empty!');
     }
 
     // Split things by semicolon...

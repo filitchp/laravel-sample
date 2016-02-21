@@ -9,15 +9,15 @@ class ExampleTest extends TestCase
 {
 
   /**
-   * A basic functional test example.
+   * Test valid functionality of CssParser class
    *
    * @return void
    */
   public function testCssParser()
   {
     $css = '/*Some comment*/' . 
-           '#foo, h1 a {FONT-FAMILY: lucida-sans, sans-serif; color: #ff0000; FONT-SIZE: 10pt; FONT-STYLE: normal; FONT-VARIANT: normal}' .
-           '@media screen and (min-width: 480px) { /*Some other comment*/ body {background-color: lightgreen;}}' . 
+           '#foo, h1 a {FONT-FAMILY: lucida-sans, sans-serif; color: #ff0000; FONT-SIZE: 10pt;}' .
+           '@media screen and (min-width: 480px) { /*Some other comment*/ body {background-color: lightgreen;} #main {margin-left:216px; FONT-FAMILY: "Times New Roman", Times;}}' . 
            '/* another pesky comment */';
 
     $c = new CssParser($css);
@@ -26,7 +26,7 @@ class ExampleTest extends TestCase
     
     //print_r($cssTree);
     
-    $this->assertEquals(2, count($cssTree));
+    $this->assertEquals(3, count($cssTree));
     
     $first_ruleset = $cssTree[0];
     $selector_1 = $first_ruleset['selector'][0];
@@ -49,16 +49,16 @@ class ExampleTest extends TestCase
     
     $stats = $c->getStats();
     
-    $this->assertEquals(266, $stats['file_stats']['characters']);
-    $this->assertEquals(2, $stats['css_stats']['ruleset_count']);
-    $this->assertEquals(3, $stats['css_stats']['selector_count']);
-    $this->assertEquals(['lucida-sans', 'sans-serif'], $stats['css_stats']['fonts_used']);
-    $this->assertEquals(['#ff0000'], $stats['css_stats']['colors_used']);
-
+    //print_r($stats);
     
+    $this->assertEquals(strlen($css), $stats['file_stats']['characters']);
+    $this->assertEquals(3, $stats['css_stats']['ruleset_count']);
+    $this->assertEquals(4, $stats['css_stats']['selector_count']);
+    $this->assertEquals(['lucida-sans', 'sans-serif', '"times new roman"', 'times'], $stats['css_stats']['fonts_used']);
+    $this->assertEquals(['#ff0000', 'lightgreen'], $stats['css_stats']['colors_used']);
+
   }
-  
-  
+ 
   public function testCssParserMissingBraces()
   {
 
