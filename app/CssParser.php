@@ -68,7 +68,7 @@ class CssParser
    * 
    * @param string $filepath  The CSS file on disk to read
    */
-  public function readFile($filepath)
+  public function readFile($file_path)
   {
     $file_handle = fopen($file_path, "rb");
 
@@ -349,17 +349,20 @@ class CssParser
    */
   protected function _parseCssDeclarationBlob(&$declarationBlob)
   {
-    // Get everything inside of the braces { }
-    $declarationsMatches = [];
-    preg_match("/\{(.*?)\}/", $declarationBlob, $declarationsMatches);
+    $declarationBlobLength = strlen($declarationBlob);
 
-    if (empty($declarationsMatches[1]))
+    // TODO: verify we actually have braces
+    if ($declarationBlobLength <= 2)
     {
-      throw new Exception('Declaration is empty!');
+      // Declaration blob is empty (either "{}" or ""), ignore it...
+      continue;
     }
 
+    // Remove the outer braces (simpler and quicker than regex)
+    $declarationBlob = substr($declarationBlob, 1, $declarationBlob - 2);
+
     // Split things by semicolon...
-    $propertySetBlobs = explode(';', $declarationsMatches[1]);
+    $propertySetBlobs = explode(';', $declarationBlob);
 
     $declarations = [];
     

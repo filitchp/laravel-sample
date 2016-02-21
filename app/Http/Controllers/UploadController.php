@@ -1,6 +1,7 @@
 <?php namespace App\Http\Controllers;
  
 use App\Http\Controllers\Controller;
+use App\CssParser;
 
 use Redirect;
 use Session;
@@ -69,6 +70,15 @@ class UploadController extends Controller {
         throw new Exception('File not found.');
       }
 
+      $c = new CssParser();
+      
+      $c->readFile($file_path);
+      $c->parseCss();
+      $stats = $c->getStats();
+
+      print_r($stats);
+      
+      //return view('upload', compact('error'));
 
       // send success JSON
     }
@@ -77,6 +87,4 @@ class UploadController extends Controller {
       // send error message if you can
     }
   }
-  
- 
 }
