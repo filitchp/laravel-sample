@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Laravel 5.2 Sample - CSS Stats</title>
+    <title>CSS Stats</title>
 
     <link href="https://fonts.googleapis.com/css?family=Lato:100,400" rel="stylesheet" type="text/css">
 

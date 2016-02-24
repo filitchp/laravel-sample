@@ -131,6 +131,11 @@ class CssParser
 
   }
   
+  public function getCssBlob()
+  {
+    return $this->cssBlob;
+  }
+  
   /**
    * Get stats about the CSS that was parsed
    * 

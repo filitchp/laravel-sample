@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Laravel 5 Code Sample</title>
+    <title>CSS Stats</title>
 
     <link href="https://fonts.googleapis.com/css?family=Lato:100" rel="stylesheet" type="text/css">
 
@@ -54,7 +54,7 @@
         <p class="error">{!! $error !!}</p>
         @endif
 
-        {!! Form::open(array('url'=>'upload', 'method'=>'POST', 'files'=>true)) !!}
+        {!! Form::open(['url'=>'upload', 'method'=>'POST', 'files'=>true]) !!}
 
         {!! Form::file('cssfile') !!}
         {!! Form::submit('Submit') !!}
