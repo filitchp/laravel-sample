@@ -33,7 +33,7 @@
       }
 
       .title {
-        font-size: 60px;
+        font-size: 70px;
         font-weight: 100;
       }
       
@@ -62,7 +62,7 @@
   <body>
     <div class="container">
       <div class="content">
-        <div class="title">CSS file stats</div>
+        <div class="title">Statistics</div>
         <p class="list-header">File</p>
         <ul class="list-group">
           <li class="list-group-item">

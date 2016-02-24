@@ -14,6 +14,7 @@ class UploadController extends Controller {
   private static $ERROR_FILE_NOT_PROVIDED = '1';
   private static $ERROR_FILE_INVALID      = '2';
   private static $ERROR_FILE_NOT_CSS      = '3';
+  private static $ERROR_FILE_SUSPICIOUS   = '4';
 
 	/**
 	 * Display a listing of the resource.
@@ -34,7 +35,11 @@ class UploadController extends Controller {
         break;
       
       case static::$ERROR_FILE_NOT_CSS:
-        $error = 'File is not css';
+        $error = 'File is not CSS. Please ensure it has a .css extension';
+        break;
+      
+      case static::$ERROR_FILE_SUSPICIOUS:
+        $error = 'File content does not appear to be text';
         break;
     }
 
@@ -61,6 +66,13 @@ class UploadController extends Controller {
       return Redirect::to('/?error=' . static::$ERROR_FILE_NOT_CSS);
     }
     
+    // Guess the mime type based on the file content rather than relying on the
+    // client    
+    if (!str_contains($file->getMimeType(), 'text'))
+    {
+      return Redirect::to('/?error=' . static::$ERROR_FILE_SUSPICIOUS);
+    }
+        
     try
     {
       $file_path = $file->getPathname();
@@ -75,8 +87,6 @@ class UploadController extends Controller {
       $c->readFile($file_path);
       $c->parseCss();
       $stats = $c->getStats();
-
-      //print_r($stats);
       
       return view('stats', compact('error', 'stats'));
     }
