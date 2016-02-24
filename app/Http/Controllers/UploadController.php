@@ -76,11 +76,9 @@ class UploadController extends Controller {
       $c->parseCss();
       $stats = $c->getStats();
 
-      print_r($stats);
+      //print_r($stats);
       
-      //return view('upload', compact('error'));
-
-      // send success JSON
+      return view('stats', compact('error', 'stats'));
     }
     catch (Exception $e)
     {

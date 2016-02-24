@@ -8,11 +8,19 @@ class CssParser
   //---------------------------
   //        Constants
   //---------------------------
-  private static $MAX_LINES = 10000;
+  private static $MAX_LINES = 20000;
   private static $FONT_PROPERTY = 'font-family';
   private static $FONT_SIZE_PROPERTY = 'font-size';
   private static $COLOR_PROPERTY = 'color';
   private static $BG_COLOR_PROPERTY = 'background-color';
+  private static $BORDER_TOP_COLOR    = 'border-top-color';
+  private static $BORDER_LEFT_COLOR   = 'border-left-color';
+  private static $BORDER_RIGHT_COLOR  = 'border-right-color';
+  private static $BORDER_BOTTOM_COLOR = 'border-bottom-color';
+  //private static $BACKGROUND_PROPERTY = 'background';
+  // TODO: support for border-color
+
+  private static $IGNORE_COLORS       = ['transparent','initial','inherit'];
 
   //---------------------------
   //       Properties
@@ -137,6 +145,7 @@ class CssParser
     
     $selector_count    = 0;
     $media_query_count = 0;
+    $important_count = 0;
     $ruleset_count = count($this->cssTree);
     $fonts_used = [];
     $colors_used = [];
@@ -150,6 +159,11 @@ class CssParser
         $value = $declaration['value'];
         
         //print_r($declaration['property']);
+        
+        if (!empty($declaration['important']))
+        {
+          $important_count++;
+        }
 
         switch ($declaration['property'])
         {
@@ -172,7 +186,17 @@ class CssParser
           
           case static::$COLOR_PROPERTY:
           case static::$BG_COLOR_PROPERTY:
-            $colors_used = array_merge($colors_used, [$value]);
+          case static::$BORDER_TOP_COLOR:
+          case static::$BORDER_LEFT_COLOR:
+          case static::$BORDER_RIGHT_COLOR:
+          case static::$BORDER_BOTTOM_COLOR:
+          //case static::$BACKGROUND_PROPERTY:
+            
+            if (!in_array($value, static::$IGNORE_COLORS))
+            {
+              $colors_used = array_merge($colors_used, [$value]);
+            }
+            
             break;
         }
       }
@@ -182,7 +206,7 @@ class CssParser
         $media_query_count++;
       }
     }
-
+    
     return [
       'file_stats' => ['lines'      => $this->line_count,
                        'characters' => $this->character_count],
@@ -190,6 +214,7 @@ class CssParser
         'ruleset_count'     => $ruleset_count,
         'selector_count'    => $selector_count,
         'media_query_count' => $media_query_count,
+        'important_count'   => $important_count,
         'fonts_used'        => array_unique($fonts_used),
         'colors_used'       => array_unique($colors_used),
       ]
@@ -319,8 +344,6 @@ class CssParser
                             'media_query'  => $mediaQuery];
       }
     }
-    
-    //print_r($this->cssTree);
   }
 
   /**
@@ -355,7 +378,7 @@ class CssParser
     if ($declarationBlobLength <= 2)
     {
       // Declaration blob is empty (either "{}" or ""), ignore it...
-      continue;
+      return;
     }
 
     // Remove the outer braces (simpler and quicker than regex)
@@ -368,6 +391,8 @@ class CssParser
     
     foreach ($propertySetBlobs as &$propertySetBlob)
     {
+      $propertySetBlob = trim($propertySetBlob);
+      
       if (empty($propertySetBlob))
       {
         continue;
@@ -384,36 +409,112 @@ class CssParser
       {
         throw new Exception('Invalid declaration, missing value!');
       }
-
-      $values_temp = explode(',', $set[1]);
-      $values_temp_count = count($values_temp);
       
-      if ($values_temp_count > 1)
+      if (static::_has_color_decimal_notation($set[1]))
       {
-        $value = [];
-        
-        foreach ($values_temp as &$value_temp)
-        {
-          if (empty($value_temp))
-          {
-            continue;
-          }
-          
-          $value[] = strtolower(trim($value_temp));
-        }
+        $value = strtolower(trim($set[1]));
+        $has_important_keyword = static::_remove_important($value);
       }
-      else if ($values_temp_count == 1)
+      else
       {
-        $value = strtolower(trim($values_temp[0]));
+
+        $values_temp = explode(',', $set[1]);
+        $values_temp_count = count($values_temp);
+
+        if ($values_temp_count > 1)
+        {
+          $value = [];
+
+          foreach ($values_temp as &$value_temp)
+          {
+            if (empty($value_temp))
+            {
+              continue;
+            }
+
+            $value_temp = strtolower(trim($value_temp));
+
+            $has_important_keyword = static::_remove_important($value_temp);
+
+            $value[] = $value_temp;
+          }
+        }
+        else if ($values_temp_count == 1)
+        {
+          $value = strtolower(trim($values_temp[0]));
+          $has_important_keyword = static::_remove_important($value);
+        }
       }
 
       $declarations[] = [
-        'property' => strtolower(trim($set[0])),
-        'value'    => $value
+        'property'  => strtolower(trim($set[0])),
+        'value'     => $value,
+        'important' => $has_important_keyword
       ];
     }
     
     return $declarations;
+  }
+  
+  /**
+   * Strip the '!important' keyword off of the attribute and return the status
+   * of its existance
+   * 
+   * @param string $value reference to the value
+   * @return boolean  true if the '!important' keyword exists, false otherwise
+   */
+  protected static function _remove_important(&$value)
+  {
+    $r = strpos($value, '!important');
+    
+    if ($r !== FALSE)
+    {
+      $value = trim(substr($value, 0, strlen($value)-10));
+      return true;
+    }
+    
+    return false;
+  }
+  
+  /**
+   * http://reference.sitepoint.com/css/colorvalues
+   * @param type $value
+   */
+  protected static function _has_color_decimal_notation($value)
+  {
+    return str_contains($value, ['rgb(', 'rgba(', 'hsl(', 'hsla(']);
+  }
+  
+  /**
+   * http://reference.sitepoint.com/css/colorvalues#colorvalues__tbl_colourvalues_color-keywords
+   * Not a comprehensive list, see:http://www.w3schools.com/colors/colors_names.asp
+   * 
+   * @param string $value the name of the color
+   * @return string the hexadecimal result
+   */
+  protected static function _color_to_hex($value)
+  {
+    switch ($value)
+    {
+      case 'aqua':    return '#00ffff';
+      case 'black':   return '#000000';
+      case 'blue':    return '#0000ff';
+      case 'fuchsia': return '#ff00ff';
+      case 'gray':    return '#808080';
+      case 'green':   return '#008000';
+      case 'lime':    return '#00ff00';
+      case 'maroon':  return '#800000';
+      case 'navy':    return '#000080';
+      case 'olive':   return '#808000';
+      case 'orange':  return '#ffa500';
+      case 'purple':  return '#800080';
+      case 'red':     return '#ff0000';
+      case 'silver':  return '#c0c0c0';
+      case 'teal':    return '#008080';
+      case 'white':   return '#ffffff';
+      case 'yellow':  return '#ffff00';
+      default: return null;
+    }
   }
 
 }
