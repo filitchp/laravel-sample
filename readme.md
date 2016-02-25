@@ -3,11 +3,11 @@
 This is a basic Laravel sample project that shows statistics about a user uploaded CSS file. 
 
 The project demonstrates basic use of:
-- OOP principles
-- MVC design
-- Unit testing
-- PSR-4 namespaces
-- Composer dependency management
+- OOP principles (see [example](app/CssParser.php))
+- MVC design (see [model](app/CssParser.php), [view](resources/views/stats.blade.php), and  [controller](app/Http/Controllers/UploadController.php))
+- Unit testing (see [test case](tests/ExampleTest.php))
+- Basic file input handling (see [example](app/Http/Controllers/UploadController.php))
+- Composer dependency management & PSR-4 autoloading (see [composer.json](composer.json))
 
 NOTE: it is not the intent of this project to include a comprehensize CSS parser that accounts for all corner cases (there are plenty of libraries to chose from).  
 
