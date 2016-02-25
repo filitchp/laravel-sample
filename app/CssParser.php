@@ -17,9 +17,8 @@ class CssParser
   private static $BORDER_LEFT_COLOR   = 'border-left-color';
   private static $BORDER_RIGHT_COLOR  = 'border-right-color';
   private static $BORDER_BOTTOM_COLOR = 'border-bottom-color';
-  //private static $BACKGROUND_PROPERTY = 'background';
-  // TODO: support for border-color
-
+  //private static $BACKGROUND_PROPERTY = 'background'; // TODO: support for border-color
+  
   private static $IGNORE_COLORS       = ['transparent','initial','inherit'];
 
   //---------------------------
@@ -37,6 +36,7 @@ class CssParser
   // Stats
   protected $line_count      = 0;
   protected $character_count = 0;
+  protected $media_query_count = 0;
   
   //----------------------------------------------------------------------------
   //  CSS ruleset syntax
@@ -89,6 +89,7 @@ class CssParser
     $this->cssTree = [];
     $this->line_count = 0;
     $this->character_count = 0;
+    $this->media_query_count = 0;
     
     while (!feof($file_handle))
     {
@@ -131,6 +132,10 @@ class CssParser
 
   }
   
+  /**
+   * Simply return the raw CSS blob (CSS without newlines)
+   * @return string
+   */
   public function getCssBlob()
   {
     return $this->cssBlob;
@@ -149,7 +154,7 @@ class CssParser
     }
     
     $selector_count    = 0;
-    $media_query_count = 0;
+    $media_query_rulesets = 0;
     $important_count = 0;
     $ruleset_count = count($this->cssTree);
     $fonts_used = [];
@@ -162,9 +167,7 @@ class CssParser
       foreach ($rulesets['declarations'] as &$declaration)
       {
         $value = $declaration['value'];
-        
-        //print_r($declaration['property']);
-        
+
         if (!empty($declaration['important']))
         {
           $important_count++;
@@ -195,10 +198,26 @@ class CssParser
           case static::$BORDER_LEFT_COLOR:
           case static::$BORDER_RIGHT_COLOR:
           case static::$BORDER_BOTTOM_COLOR:
-          //case static::$BACKGROUND_PROPERTY:
             
             if (!in_array($value, static::$IGNORE_COLORS))
             {
+              // Translate word-based color to hex
+              $hex = static::_color_to_hex($value);
+              
+              if ($hex !== null)
+              {
+                $value = $hex;
+              }
+              else
+              {
+                $expanded_hex = static::_get_expanded_hex($value);
+                
+                if ($expanded_hex !== null)
+                {
+                  $value = $expanded_hex;
+                }
+              }
+
               $colors_used = array_merge($colors_used, [$value]);
             }
             
@@ -208,7 +227,7 @@ class CssParser
       
       if (!empty($rulesets['media_query']))
       {
-        $media_query_count++;
+        $media_query_rulesets++;
       }
     }
     
@@ -216,12 +235,13 @@ class CssParser
       'file_stats' => ['lines'      => $this->line_count,
                        'characters' => $this->character_count],
       'css_stats' => [
-        'ruleset_count'     => $ruleset_count,
-        'selector_count'    => $selector_count,
-        'media_query_count' => $media_query_count,
-        'important_count'   => $important_count,
-        'fonts_used'        => array_unique($fonts_used),
-        'colors_used'       => array_unique($colors_used),
+        'ruleset_count'        => $ruleset_count,
+        'selector_count'       => $selector_count,
+        'media_query_count'    => $this->media_query_count,
+        'media_query_rulesets' => $media_query_rulesets,
+        'important_count'      => $important_count,
+        'fonts_used'           => array_unique($fonts_used),
+        'colors_used'          => array_unique($colors_used),
       ]
     ];
   }
@@ -312,7 +332,7 @@ class CssParser
       
       if (str_contains($selectorBlob, '@media'))
       {
-        
+        $this->media_query_count++;
         $mediaRulesets = [];
         $declarationsMatches = [];
 
@@ -520,6 +540,23 @@ class CssParser
       case 'yellow':  return '#ffff00';
       default: return null;
     }
+  }
+  
+  /**
+   * Given hex shorthand (#abc) expand it to the full value (#aabbcc)
+   * @param string $value
+   * @return string|null
+   */
+  protected static function _get_expanded_hex($value)
+  {
+    $len = strlen($value);
+
+    if (($len >= 4) && ($value[0] == '#') && ($len < 7))
+    {
+      return '#' . $value[1] . $value[1] . $value[2] . $value[2] . $value[3] . $value[3];
+    }
+    
+    return null;
   }
 
 }

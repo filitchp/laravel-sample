@@ -82,7 +82,10 @@
             Selectors <span class="badge">{{ $stats['css_stats']['selector_count'] }}</span>
           </li>
           <li class="list-group-item">
-            Media queries <span class="badge">{{ $stats['css_stats']['media_query_count'] }}</span>
+            Media query count <span class="badge">{{ $stats['css_stats']['media_query_count'] }}</span>
+          </li>
+          <li class="list-group-item">
+            Media query rulesets <span class="badge">{{ $stats['css_stats']['media_query_rulesets'] }}</span>
           </li>
           <li class="list-group-item">
             Use of !important <span class="badge">{{ $stats['css_stats']['important_count'] }}</span>
