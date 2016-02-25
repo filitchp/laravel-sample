@@ -62,7 +62,7 @@
   <body>
     <div class="container">
       <div class="content">
-        <div class="title">Statistics</div>
+        <div class="title">CSS Statistics</div>
         <p class="list-header">File</p>
         <ul class="list-group">
           <li class="list-group-item">
@@ -73,7 +73,7 @@
           </li>
         </ul>
         
-        <p class="list-header">CSS</p>
+        <p class="list-header">Syntax</p>
         <ul class="list-group">
           <li class="list-group-item">
             Rulesets <span class="badge">{{ $stats['css_stats']['ruleset_count'] }}</span>

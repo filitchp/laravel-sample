@@ -457,7 +457,12 @@ class CssParser
               continue;
             }
 
-            $value_temp = strtolower(trim($value_temp));
+            $value_temp = trim($value_temp);
+            
+            if (!str_contains($value_temp, '"'))
+            {
+              $value_temp = strtolower($value_temp);
+            }
 
             $has_important_keyword = static::_remove_important($value_temp);
 
