@@ -387,7 +387,7 @@ class CssParser
     }
 
     // Remove the outer braces (simpler and quicker than regex)
-    $declarationBlob = substr($declarationBlob, 1, $declarationBlob - 2);
+    $declarationBlob = substr($declarationBlob, 1, $declarationBlobLength - 2);
 
     // Split things by semicolon...
     $propertySetBlobs = explode(';', $declarationBlob);

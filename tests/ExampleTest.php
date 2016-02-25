@@ -19,12 +19,16 @@ class ExampleTest extends TestCase
            '#foo, h1 a {FONT-FAMILY: lucida-sans, sans-serif; color: #ff0000; FONT-SIZE: 10pt;}' .
            '@media screen and (min-width: 480px) { /*Some other comment*/ body {background-color: lightgreen;} #main {margin-left:216px; FONT-FAMILY: "Times New Roman", Times;}}' . 
            '/* another pesky comment */';
-
+    
+    
+//    $css = '.btn-seo:hover{background-color:rgba(13,13,13,0);color:#c2bdb6;border-color:rgba(13,13,13,0)}';
+  
     $c = new CssParser($css);
     
     $cssTree = $c->parseCss();
     
-    //print_r($cssTree);
+//    print_r($cssTree);
+//    exit;
     
     $this->assertEquals(3, count($cssTree));
     
