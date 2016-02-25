@@ -16,6 +16,7 @@ class UploadController extends Controller {
   private static $ERROR_FILE_INVALID      = '2';
   private static $ERROR_FILE_NOT_CSS      = '3';
   private static $ERROR_FILE_SUSPICIOUS   = '4';
+  private static $ERROR_FILE_PARSING      = '5';
 
 	/**
 	 * Display a listing of the resource.
@@ -41,6 +42,10 @@ class UploadController extends Controller {
       
       case static::$ERROR_FILE_SUSPICIOUS:
         $error = 'File content does not appear to be text';
+        break;
+      
+      case static::$ERROR_FILE_PARSING:
+        $error = 'There was an unknown parsing error, please try again';
         break;
     }
 
@@ -100,6 +105,7 @@ class UploadController extends Controller {
     catch (Exception $e)
     {
       // send error message if you can
+      return Redirect::to('/?error=' . static::$ERROR_FILE_PARSING);
     }
   }
 }
