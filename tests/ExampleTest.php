@@ -60,7 +60,7 @@ class ExampleTest extends TestCase
     $this->assertEquals(4, $stats['css_stats']['selector_count']);
     $this->assertEquals(1, $stats['css_stats']['media_query_count']);
     $this->assertEquals(2, $stats['css_stats']['media_query_rulesets']);
-    $this->assertEquals(['lucida-sans', 'sans-serif', '"times new roman"', 'times'], $stats['css_stats']['fonts_used']);
+    $this->assertEquals(['lucida-sans', 'sans-serif', '"Times New Roman"', 'times'], $stats['css_stats']['fonts_used']);
     $this->assertEquals(['#ff0000', 'lightgreen'], $stats['css_stats']['colors_used']);
 
   }

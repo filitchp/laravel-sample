@@ -20,6 +20,7 @@ class CssParser
   //private static $BACKGROUND_PROPERTY = 'background'; // TODO: support for border-color
   
   private static $IGNORE_COLORS       = ['transparent','initial','inherit'];
+  private static $IGNORE_FONTS        = ['initial','inherit'];
 
   //---------------------------
   //       Properties
@@ -177,21 +178,20 @@ class CssParser
         {
           case static::$FONT_PROPERTY:
 
-            if (is_array($value))
+            if (!in_array($value, static::$IGNORE_FONTS))
             {
-              $fonts_used = array_merge($fonts_used, $value);
-            }
-            else
-            {
-              $fonts_used = array_merge($fonts_used, [$value]);
+              if (is_array($value))
+              {
+                $fonts_used = array_merge($fonts_used, $value);
+              }
+              else
+              {
+                $fonts_used = array_merge($fonts_used, [$value]);
+              }
             }
 
             break;
-            
-          case static::$FONT_SIZE_PROPERTY:
-            
-            break;
-          
+
           case static::$COLOR_PROPERTY:
           case static::$BG_COLOR_PROPERTY:
           case static::$BORDER_TOP_COLOR:
