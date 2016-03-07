@@ -1,6 +1,6 @@
 # Laravel 5.2 Sample Project
 
-This is a basic Laravel sample project that shows info about a user uploaded CSS file. See functional demo at <a href="http://css.paulsf.com" target="_blank">css.paulsf.com</a>.
+This is a basic Laravel sample project that shows info about a user uploaded CSS file. See demo at <a href="http://css.paulsf.com" target="_blank">css.paulsf.com</a>.
 
 The project demonstrates basic use of:
 - OOP principles (see [example](app/CssParser.php))
