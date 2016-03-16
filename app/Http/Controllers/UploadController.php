@@ -55,12 +55,12 @@ class UploadController extends Controller {
   public function upload(Request $request)
   {
     
-    if (!$request->hasFile('cssfile'))
+    if (!$request->hasFile('file'))
     {
       return Redirect::to('/?error=' . static::$ERROR_FILE_NOT_PROVIDED);
     }
     
-    $file = $request->file('cssfile');
+    $file = $request->file('file');
 
     if (!$file->isValid())
     {
@@ -94,11 +94,10 @@ class UploadController extends Controller {
       $c->parseCss();
       $stats = $c->getStats();
       
-      $stats_json = json_encode($stats);
-      
-      Storage::put('blob.css', $c->getCssBlob());
-      
-      Storage::put('stats.json', $stats_json);
+//      $stats_json = json_encode($stats);
+//      Storage::put('blob.css', $c->getCssBlob());
+//      
+//      Storage::put('stats.json', $stats_json);
       
       return view('stats', compact('error', 'stats'));
     }
