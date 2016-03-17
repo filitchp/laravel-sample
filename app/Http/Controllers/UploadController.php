@@ -3,20 +3,12 @@
 use App\Http\Controllers\Controller;
 use App\CssParser;
 
-use Redirect;
-use Session;
-use Storage;
+use Exception;
 
 use Illuminate\Http\Response;
 use Illuminate\Http\Request;
  
 class UploadController extends Controller {
-
-  private static $ERROR_FILE_NOT_PROVIDED = '1';
-  private static $ERROR_FILE_INVALID      = '2';
-  private static $ERROR_FILE_NOT_CSS      = '3';
-  private static $ERROR_FILE_SUSPICIOUS   = '4';
-  private static $ERROR_FILE_PARSING      = '5';
 
 	/**
 	 * Display a listing of the resource.
@@ -25,58 +17,32 @@ class UploadController extends Controller {
 	 */
 	public function index(Request $request)
   {
-    // Simple error display without relying on session
-    switch ($request->input('error', '-1'))
-    {
-      case static::$ERROR_FILE_NOT_PROVIDED:
-        $error = 'No file provided or file too large';
-        break;
-      
-      case static::$ERROR_FILE_INVALID:
-        $error = 'File is invalid';
-        break;
-      
-      case static::$ERROR_FILE_NOT_CSS:
-        $error = 'File is not CSS. Please ensure it has a .css extension';
-        break;
-      
-      case static::$ERROR_FILE_SUSPICIOUS:
-        $error = 'File content does not appear to be text';
-        break;
-      
-      case static::$ERROR_FILE_PARSING:
-        $error = 'There was an unknown parsing error, please try again';
-        break;
-    }
-
     return view('upload', compact('error'));
   }
 
   public function upload(Request $request)
   {
     
-    if (!$request->hasFile('file'))
-    {
-      return Redirect::to('/?error=' . static::$ERROR_FILE_NOT_PROVIDED);
-    }
-    
     $file = $request->file('file');
 
     if (!$file->isValid())
     {
-      return Redirect::to('/?error=' . static::$ERROR_FILE_INVALID);
+      $error = 'File is invalid';
+      return view('error', compact('error'));
     }
 
     if (strtolower($file->extension()) != 'css')
     {
-      return Redirect::to('/?error=' . static::$ERROR_FILE_NOT_CSS);
+      $error = 'File is not CSS. Please ensure it has a .css extension';
+      return view('error', compact('error'));
     }
     
     // Guess the mime type based on the file content rather than relying on the
     // client    
     if (!str_contains($file->getMimeType(), 'text'))
     {
-      return Redirect::to('/?error=' . static::$ERROR_FILE_SUSPICIOUS);
+      $error = 'File content does not appear to be text';
+      return view('error', compact('error'));
     }
         
     try
@@ -93,18 +59,13 @@ class UploadController extends Controller {
       $c->readFile($file_path);
       $c->parseCss();
       $stats = $c->getStats();
-      
-//      $stats_json = json_encode($stats);
-//      Storage::put('blob.css', $c->getCssBlob());
-//      
-//      Storage::put('stats.json', $stats_json);
-      
-      return view('stats', compact('error', 'stats'));
+           
+      return view('stats', compact('stats'));
     }
     catch (Exception $e)
     {
-      // send error message if you can
-      return Redirect::to('/?error=' . static::$ERROR_FILE_PARSING);
+      $error = $e->getMessage();
+      return view('error', compact('error'));
     }
   }
 }

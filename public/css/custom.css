@@ -1,0 +1,37 @@
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: table;
+  font-weight: 300;
+  font-family: 'Lato';
+}
+
+.main {
+  text-align: center;
+  display: table-cell;
+  vertical-align: middle;
+}
+
+.content {
+  text-align: center;
+  display: inline-block;
+}
+
+.dz-message {
+  font-size: 18px;
+}
+
+.title {
+  font-size: 60px;
+  font-weight: 100;
+}
+
+.error {
+  font-family: 'Arial';
+  color: red;
+}
